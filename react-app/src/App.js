@@ -1,5 +1,6 @@
 import {useState,useEffect} from "react";
 import {ethers} from 'ethers';
+import {contractAbi, contractAddress} from './constants/constants';
 import './App.css';
 import Login from './components/Login';
 import Connected from "./components/Connected";
@@ -7,9 +8,15 @@ import Connected from "./components/Connected";
 function App() {
   const [provider,setProvider] = useState(null); //set the current provider 
   const [account,setAccount] = useState(null);  //set userAddress
-  const [isConnected,setIsConnected] = useState(null);
+  const [isConnected,setIsConnected] = useState(null); //set true if user is connected to metamask
+  const [votingStatus, setVotingStatus] = useState(true); // get current time from smartcontract
+  const [question, setQuestion] = useState('');
+  const [CanVote,setCanVote] = useState(false);
 
   useEffect( () => {
+
+    getCurrentQuestion();
+    getCurrentStatus();
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
     }
@@ -21,6 +28,39 @@ function App() {
     }
   });
 
+  async function vote(value) {
+    try{
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+    await provider.send("eth_requestAccounts", []);
+    const signer = provider.getSigner();
+    const contractInstance = new ethers.Contract (
+      contractAddress, contractAbi, signer
+    );
+
+    const tx = await contractInstance.vote(value);
+    await tx.wait();
+    canVote();
+    }catch(err){
+      console.log("Error occured vote Function",err)
+    }
+    
+}
+
+  async function canVote() { // if certain address is allowed to vote
+    try{
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const contractInstance = new ethers.Contract (
+        contractAddress, contractAbi, signer
+      );
+      // const voteStatus = await contractInstance.voters(await signer.getAddress());
+      // setCanVote(voteStatus);
+    }catch(err){
+      console.error("Error occured canVote",err)
+    }
+}
+
 
   function handleAccountsChanged(accounts) {
     if (accounts.length > 0 && account !== accounts[0]) {
@@ -30,6 +70,39 @@ function App() {
       setAccount(null);
     }
   }
+
+  async function getCurrentStatus() {
+    try{
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const contractInstance = new ethers.Contract (
+        contractAddress, contractAbi, signer
+      );
+      const status = await contractInstance.votingEnd();
+      console.log(status);
+      const now = new Date();
+      const timeLeft = now.getTime()- 99358160662 ;
+      console.log("Value of timeLeft",timeLeft);
+      setVotingStatus(parseInt(status, 16));
+      console.log(votingStatus);
+    }
+    catch(err){
+      console.error("Error occured getCurrentStatus",err)
+    }
+}
+
+async function getCurrentQuestion() {
+  const provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  const signer = provider.getSigner();
+  const contractInstance = new ethers.Contract (
+    contractAddress, contractAbi, signer
+  );
+  const currentQuestion = await contractInstance.question();
+  console.log(currentQuestion);
+  setQuestion(currentQuestion);
+}
 
   async function connectToMetamask(){
     if(window.ethereum){ //to check if the wallet is connected on page reload
@@ -53,10 +126,7 @@ function App() {
   }
   return (
     <div className="App">
-   
-
-      {isConnected ? <Connected account={account}/> : <Login connectWallet={connectToMetamask}/>}
-      
+      {isConnected ? <Connected account={account} question={question} voteFunction={vote}/> : <Login connectWallet={connectToMetamask}/>}
 
     </div>
   );

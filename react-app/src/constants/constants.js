@@ -1,5 +1,5 @@
-const contractAddress = "";
-const contractABI = [
+const contractAddress = "0xB80d938491320726219F706faCe9E1C9F059C873";
+const contractAbi = [
 	{
 		"inputs": [
 			{
@@ -181,4 +181,4 @@ const contractABI = [
 	}
 ];
 
-export {contractABI,contractAddress};
+export {contractAbi,contractAddress};
