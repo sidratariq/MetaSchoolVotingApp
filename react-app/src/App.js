@@ -12,11 +12,15 @@ function App() {
   const [votingStatus, setVotingStatus] = useState(true); // get current time from smartcontract
   const [question, setQuestion] = useState('');
   const [CanVote,setCanVote] = useState(false);
+  const [yesVote,setYesVote] = useState(0);
+  const [noVote,setNoVote] = useState(0);
+  const [finished,setFinished] = useState(false);
 
   useEffect( () => {
 
     getCurrentQuestion();
     getCurrentStatus();
+    getResults();
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
     }
@@ -61,7 +65,6 @@ function App() {
     }
 }
 
-
   function handleAccountsChanged(accounts) {
     if (accounts.length > 0 && account !== accounts[0]) {
       setAccount(accounts[0]);
@@ -80,11 +83,12 @@ function App() {
         contractAddress, contractAbi, signer
       );
       const status = await contractInstance.votingEnd();
-      console.log(status);
+      console.log("Blockchain end time",parseInt(status));
       const now = new Date();
+      console.log(" Blockchain end time Time from now:::",now.getTime())
       const timeLeft = now.getTime()- 99358160662 ;
       console.log("Value of timeLeft",timeLeft);
-      setVotingStatus(parseInt(status, 16));
+      setVotingStatus(parseInt(status));
       console.log(votingStatus);
     }
     catch(err){
@@ -124,9 +128,32 @@ async function getCurrentQuestion() {
       console.error("Metamask is not detected in the browser");
     }
   }
+
+  async function getResults(){
+    try{
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      const signer = provider.getSigner();
+      const contractInstance = new ethers.Contract (
+        contractAddress, contractAbi, signer
+      );
+      const status = await contractInstance.getResults();
+      const numOfYes = parseInt(status[1]);
+      const numOfNo = parseInt(status[2]);
+      setYesVote(numOfYes);
+      setNoVote(numOfNo);
+      console.log("Value of status:::",numOfYes,numOfNo);
+
+    }
+    catch(err){
+      console.error("Error occured getCurrentStatus",err)
+    }
+  }
+
+
   return (
     <div className="App">
-      {isConnected ? <Connected account={account} question={question} voteFunction={vote}/> : <Login connectWallet={connectToMetamask}/>}
+      {isConnected ? <Connected account={account} question={question} voteFunction={vote} yesVote={yesVote} noVote={noVote} votingStatus={votingStatus}/> : <Login connectWallet={connectToMetamask}/>}
 
     </div>
   );

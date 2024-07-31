@@ -2,12 +2,18 @@ import React, { useEffect, useState } from 'react';
 
 const calculateTimeLeft = (targetDate) => {
     const now = new Date();
-    const timeLeft = now.getTime() -99358160662;
-
+    const blockchainEndTime = new Date(targetDate)
+    const timeLeft = blockchainEndTime.getTime() -now.getTime();
+    console.log("Value from blockchain:::",blockchainEndTime.getTime());
+    console.log("Value from of current time",now.getTime());
+    console.log("The difference:::",timeLeft);
     const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
     const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
     const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
     const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+    console.log("Days,hours,minutes,seconds",days,hours,minutes,seconds)
+
 
     return {
         days: String(days).padStart(2, '0'),
@@ -18,6 +24,7 @@ const calculateTimeLeft = (targetDate) => {
 };
 
 const GlobalCountdown = ({ targetDate }) => {
+    console.log("Value of targetDate",targetDate);
     const [timeLeft, setTimeLeft] = useState({
         days: '00',
         hours: '00',
